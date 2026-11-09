@@ -50,13 +50,22 @@ jobs:
           Server = https://pkg.devkitpro.org
           EOF
 
-          # 3. Manually create the dkp-pacman symlink pointing to the unpacked binary
-          sudo ln -sf /opt/devkitpro/pacman/bin/pacman /usr/bin/dkp-pacman
+          # 3. Create a robust wrapper script in /usr/local/bin for dkp-pacman
+          sudo tee /usr/local/bin/dkp-pacman > /dev/null << 'EOF'
+          #!/bin/bash
+          # Find pacman binary dynamically under /opt/devkitpro/pacman
+          PACMAN_BIN=$(find /opt/devkitpro/pacman -name pacman -type f -executable | head -n 1)
+          if [ -z "$PACMAN_BIN" ]; then
+            PACMAN_BIN="/opt/devkitpro/pacman/bin/pacman"
+          fi
+          exec "$PACMAN_BIN" --config /opt/devkitpro/pacman/etc/pacman.conf "$@"
+          EOF
+          sudo chmod +x /usr/local/bin/dkp-pacman
 
       - name: Install GBA Development Tools via dkp-pacman
         run: |
-          sudo dkp-pacman --config /opt/devkitpro/pacman/etc/pacman.conf -Sy --noconfirm
-          sudo dkp-pacman --config /opt/devkitpro/pacman/etc/pacman.conf -Syu --noconfirm gba-dev || true
+          sudo dkp-pacman -Sy --noconfirm
+          sudo dkp-pacman -Syu --noconfirm gba-dev || true
 
       - name: Install Poryscript via GitHub Releases
         run: |
