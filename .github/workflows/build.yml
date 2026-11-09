@@ -17,10 +17,10 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Install System Dependencies & ARM Toolchain
+      - name: Install System Dependencies & Toolchains
         run: |
           sudo apt-get update
-          sudo apt-get install -y curl wget build-essential python3 unzip make libpng-dev libz-dev gcc-arm-none-eabi binutils-arm-none-eabi libnewlib-arm-none-eabi
+          sudo apt-get install -y curl wget build-essential python3 unzip make libpng-dev libz-dev gcc-arm-none-eabi binutils-arm-none-eabi libnewlib-arm-none-eabi golang-go
 
       - name: Fix missing cstdint in all json11.cpp files
         run: |
@@ -29,9 +29,15 @@ jobs:
             sed -i '1i #include <cstdint>' "$file"
           done
 
-      - name: Set Permissions for Poryscript Files
+      - name: Install Poryscript Binary
         run: |
-          chmod +x tools/poryscript/poryscript 2>/dev/null || true
+          mkdir -p tools/poryscript
+          if [ ! -f "tools/poryscript/poryscript" ]; then
+            echo "Installing poryscript via Go..."
+            go install github.com/haxrc/poryscript@latest
+            cp ~/go/bin/poryscript tools/poryscript/
+          fi
+          chmod +x tools/poryscript/poryscript
 
       - name: Clone, Build, and Install agbcc
         run: |
@@ -43,7 +49,6 @@ jobs:
           
           cd tools/agbcc
           ./build.sh
-          # Use agbcc's official installer to configure binaries and include paths
           ./install.sh ../../
           cd ../..
           make tools
