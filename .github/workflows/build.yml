@@ -19,7 +19,7 @@ jobs:
       - name: Install System Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y curl wget libarchive-tools build-essential gnupg python3
+          sudo apt-get install -y curl wget unzip libarchive-tools build-essential gnupg python3
 
       - name: Install devkitPro Pacman
         run: |
@@ -31,15 +31,16 @@ jobs:
 
       - name: Download and Install Poryscript
         run: |
-          # Dynamically find and download any Linux release asset for poryscript
+          # Dynamically fetch and extract the linux zip asset from GitHub releases
           python3 -c '
-          import urllib.request, json
+          import urllib.request, json, zipfile
           req = urllib.request.Request("https://api.github.com/repos/huderlem/poryscript/releases/latest", headers={"User-Agent": "Python"})
           data = json.loads(urllib.request.urlopen(req).read().decode())
-          url = next(a["browser_download_url"] for a in data["assets"] if "linux" in a["name"].lower() and a["name"].endswith(".tar.gz"))
-          urllib.request.urlretrieve(url, "poryscript.tar.gz")
+          url = next(a["browser_download_url"] for a in data["assets"] if "linux" in a["name"].lower() and a["name"].endswith(".zip"))
+          urllib.request.urlretrieve(url, "poryscript.zip")
+          with zipfile.ZipFile("poryscript.zip", "r") as z:
+              z.extractall(".")
           '
-          tar -xzf poryscript.tar.gz
           chmod +x poryscript
           sudo mv poryscript /usr/local/bin/poryscript
 
