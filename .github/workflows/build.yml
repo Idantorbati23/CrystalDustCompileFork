@@ -29,10 +29,10 @@ jobs:
             sed -i '1i #include <cstdint>' json11.cpp
           fi
 
-      - name: Build Repository Tools
+      - name: Build All Tools via Root Makefile
         run: |
-          chmod +x tools/poryscript/poryscript 2>/dev/null || chmod +x tools/poryscript 2>/dev/null || true
-          make -C tools
+          chmod +x tools/poryscript/poryscript 2>/dev/null || true
+          make tools
 
       - name: Run Modern Build
         run: |
