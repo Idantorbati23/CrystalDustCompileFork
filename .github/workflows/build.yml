@@ -33,14 +33,16 @@ jobs:
         run: |
           chmod +x tools/poryscript/poryscript 2>/dev/null || true
 
-      - name: Build All Tools via Root Makefile
+      - name: Build All Tools Including agbcc
         run: |
+          # Explicitly build agbcc and other tools
+          make -C tools/agbcc || true
           make tools
 
       - name: Run Modern Build with Explicit Include Paths
         run: |
-          export CFLAGS="-isystem /usr/arm-none-eabi/include"
-          export CPPFLAGS="-isystem /usr/arm-none-eabi/include"
+          export CFLAGS="-isystem /usr/arm-none-eabi/include -isystem /usr/lib/gcc/arm-none-eabi/14.2.1/include"
+          export CPPFLAGS="-isystem /usr/arm-none-eabi/include -isystem /usr/lib/gcc/arm-none-eabi/14.2.1/include"
           make -j$(nproc) modern
 
       - name: Upload Compiled ROM
