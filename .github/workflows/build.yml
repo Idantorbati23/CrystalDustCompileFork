@@ -16,55 +16,29 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Setup devkitPro Environment
-        uses: devkitPro/actions/setup@v3
-        with:
-          pacman-packages: gba-dev
-
-      - name: Install Poryscript via GitHub Releases
+      - name: Install System Dependencies & ARM Toolchain
         run: |
-          python3 -c '
-          import urllib.request, json, zipfile, os, shutil
-          token = os.environ.get("GITHUB_TOKEN", "")
-          headers = {"User-Agent": "Python"}
-          if token:
-              headers["Authorization"] = f"Bearer {token}"
-          try:
-              req = urllib.request.Request("https://api.github.com/repos/huderlem/poryscript/releases/latest", headers=headers)
-              data = json.loads(urllib.request.urlopen(req).read().decode())
-              url = next(a["browser_download_url"] for a in data["assets"] if "linux" in a["name"].lower() and a["name"].endswith(".zip"))
-          except Exception:
-              url = "https://github.com/huderlem/poryscript/releases/download/v3.2.5/poryscript_linux_amd64.zip"
-          urllib.request.urlretrieve(url, "poryscript.zip")
-          with zipfile.ZipFile("poryscript.zip", "r") as z:
-              z.extractall("pory_extracted")
-          
-          found = False
-          for root, dirs, files in os.walk("pory_extracted"):
-              for f in files:
-                  if "poryscript" in f.lower() and not f.endswith(".zip"):
-                      src = os.path.join(root, f)
-                      shutil.move(src, "poryscript")
-                      found = True
-                      break
-              if found:
-                  break
-          if not found:
-              raise FileNotFoundError("Could not locate poryscript binary in extracted archive")
-          '
-          chmod +x poryscript
-          sudo mv poryscript /usr/local/bin/poryscript
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          sudo apt-get update
+          sudo apt-get install -y curl wget build-essential python3 unzip make libpng-dev libz-dev gcc-arm-none-eabi binutils-arm-none-eabi libnewlib-arm-none-eabi
+
+      - name: Fix missing cstdint in all json11.cpp files
+        run: |
+          find . -name "json11.cpp" | while read file; do
+            echo "Patching $file"
+            sed -i '1i #include <cstdint>' "$file"
+          done
+
+      - name: Set Permissions for Poryscript Files
+        run: |
+          chmod +x tools/poryscript/poryscript 2>/dev/null || true
+
+      - name: Build All Tools via Root Makefile
+        run: |
+          make tools
 
       - name: Run Modern Build
         run: |
-          sudo ln -sf /usr/bin/make /usr/local/bin/make-modern
           make -j$(nproc) modern
-        env:
-          DEVKITPRO: /opt/devkitpro
-          DEVKITARM: /opt/devkitpro/devkitARM
-          PATH: /opt/devkitpro/devkitARM/bin:/usr/local/bin:$PATH
 
       - name: Upload Compiled ROM
         uses: actions/upload-artifact@v4
