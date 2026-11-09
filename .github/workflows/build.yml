@@ -19,53 +19,26 @@ jobs:
       - name: Install System Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y curl wget libarchive-tools build-essential gnupg python3 unzip
+          sudo apt-get install -y curl wget libarchive-tools build-essential gnupg python3 unzip make
 
-      - name: Setup devkitPro Environment & Pacman
+      - name: Setup devkitARM Toolchain Manually
         run: |
-          # 1. Download devkitpro-pacman directly from GitHub releases with fallback URL
-          PACMAN_DEB_URL=$(curl -sSL -A "Mozilla/5.0" https://api.github.com/repos/devkitPro/pacman/releases/latest | grep -o '"browser_download_url": "[^"]*amd64\.deb"' | head -n 1 | cut -d'"' -f4)
-          if [ -z "$PACMAN_DEB_URL" ]; then
-            PACMAN_DEB_URL="https://github.com/devkitPro/pacman/releases/download/v6.0.1-2/devkitpro-pacman_6.0.1-2_amd64.deb"
+          # Create devkitPro directory structure
+          sudo mkdir -p /opt/devkitpro/devkitARM
+          sudo mkdir -p /opt/devkitpro/tools
+
+          # Download and extract devkitARM release directly from GitHub (bypassing pacman & Cloudflare 403s)
+          echo "Downloading devkitARM release..."
+          DEVKITARM_URL=$(curl -sSL -A "Mozilla/5.0" https://api.github.com/repos/devkitPro/devkitarm-r1/releases/latest | grep -o '"browser_download_url": "[^"]*linux\.tar\.xz"' | head -n 1 | cut -d'"' -f4)
+          if [ -z "$DEVKITARM_URL" ]; then
+            DEVKITARM_URL="https://github.com/devkitPro/devkitarm-r1/releases/download/release_54/devkitARM-r54-linux.tar.bz2"
           fi
-          curl -sSL -A "Mozilla/5.0" -o devkitpro-pacman.deb "$PACMAN_DEB_URL"
-          sudo dpkg --unpack devkitpro-pacman.deb || true
+          
+          curl -sSL -A "Mozilla/5.0" -o devkitarm.archive "$DEVKITARM_URL"
+          sudo tar -xf devkitarm.archive -C /opt/devkitpro/ || sudo bsdtar -xf devkitarm.archive -C /opt/devkitpro/
 
-          # 2. Establish required directories and lenient pacman.conf to bypass signature blocks
-          sudo mkdir -p /opt/devkitpro/pacman/etc/pacman.d
-          sudo mkdir -p /opt/devkitpro/pacman/var/lib/pacman
-          sudo mkdir -p /opt/devkitpro/pacman/var/log
-
-          sudo tee /opt/devkitpro/pacman/etc/pacman.conf > /dev/null << 'EOF'
-          [options]
-          HoldPkg     = pacman glibc
-          Architecture = auto
-          CheckSpace
-          SigLevel    = Never
-
-          [dkp-libs]
-          Server = https://pkg.devkitpro.org
-
-          [dkp-linux]
-          Server = https://pkg.devkitpro.org
-          EOF
-
-          # 3. Create a robust wrapper script in /usr/local/bin for dkp-pacman
-          sudo tee /usr/local/bin/dkp-pacman > /dev/null << 'EOF'
-          #!/bin/bash
-          # Find pacman binary dynamically under /opt/devkitpro/pacman
-          PACMAN_BIN=$(find /opt/devkitpro/pacman -name pacman -type f -executable | head -n 1)
-          if [ -z "$PACMAN_BIN" ]; then
-            PACMAN_BIN="/opt/devkitpro/pacman/bin/pacman"
-          fi
-          exec "$PACMAN_BIN" --config /opt/devkitpro/pacman/etc/pacman.conf "$@"
-          EOF
-          sudo chmod +x /usr/local/bin/dkp-pacman
-
-      - name: Install GBA Development Tools via dkp-pacman
-        run: |
-          sudo dkp-pacman -Sy --noconfirm
-          sudo dkp-pacman -Syu --noconfirm gba-dev || true
+          # Ensure correct permissions
+          sudo chmod -R +x /opt/devkitpro/devkitARM/bin
 
       - name: Install Poryscript via GitHub Releases
         run: |
