@@ -45,14 +45,13 @@ jobs:
       - name: Link Newlib Headers for agbcc
         run: |
           mkdir -p tools/agbcc/include
-          # Link standard newlib headers so agbcc can locate stddef.h, stdint.h, etc.
           ln -sf /usr/arm-none-eabi/include/* tools/agbcc/include/ 2>/dev/null || true
           ln -sf /usr/lib/gcc/arm-none-eabi/*/include/* tools/agbcc/include/ 2>/dev/null || true
 
-      - name: Run Modern Build
+      - name: Run Sequential Modern Build
         run: |
           export CC=arm-none-eabi-gcc
-          make -j$(nproc) modern
+          make modern
 
       - name: Upload Compiled ROM
         uses: actions/upload-artifact@v4
