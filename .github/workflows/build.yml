@@ -36,8 +36,10 @@ jobs:
         run: |
           make tools
 
-      - name: Run Modern Build
+      - name: Run Modern Build with Explicit Include Paths
         run: |
+          export CFLAGS="-isystem /usr/arm-none-eabi/include"
+          export CPPFLAGS="-isystem /usr/arm-none-eabi/include"
           make -j$(nproc) modern
 
       - name: Upload Compiled ROM
