@@ -21,13 +21,12 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y curl wget build-essential python3 unzip make libpng-dev libz-dev gcc-arm-none-eabi binutils-arm-none-eabi libnewlib-arm-none-eabi
 
-      - name: Fix missing cstdint in json11
+      - name: Fix missing cstdint in all json11.cpp files
         run: |
-          if [ -f "tools/json11.cpp" ]; then
-            sed -i '1i #include <cstdint>' tools/json11.cpp
-          elif [ -f "json11.cpp" ]; then
-            sed -i '1i #include <cstdint>' json11.cpp
-          fi
+          find . -name "json11.cpp" | while read file; do
+            echo "Patching $file"
+            sed -i '1i #include <cstdint>' "$file"
+          done
 
       - name: Build All Tools via Root Makefile
         run: |
