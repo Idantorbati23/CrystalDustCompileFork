@@ -9,6 +9,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
 
     steps:
       - name: Checkout Repository
@@ -16,7 +17,7 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Install System Dependencies & ARM Toolchain
+      - name: Install System Dependencies & Toolchains
         run: |
           sudo apt-get update
           sudo apt-get install -y curl wget build-essential python3 unzip make libpng-dev libz-dev gcc-arm-none-eabi binutils-arm-none-eabi libnewlib-arm-none-eabi
@@ -28,23 +29,37 @@ jobs:
             sed -i '1i #include <cstdint>' "$file"
           done
 
-<<<<<<< HEAD
-      - name: Set Permissions for Poryscript Files
+      - name: Download and Install Official Poryscript Binary
         run: |
-          chmod +x tools/poryscript/poryscript 2>/dev/null || true
+          mkdir -p tools/poryscript
+          wget -q https://github.com/huderlem/poryscript/releases/latest/download/poryscript-linux.zip -O poryscript-linux.zip
+          unzip -o poryscript-linux.zip -d tools/poryscript/
+          # Move files out of the nested folder if they extracted into poryscript-linux/
+          if [ -d "tools/poryscript/poryscript-linux" ]; then
+            cp -r tools/poryscript/poryscript-linux/* tools/poryscript/
+            rm -rf tools/poryscript/poryscript-linux
+          fi
+          chmod +x tools/poryscript/poryscript
+          rm poryscript-linux.zip
 
-      - name: Build All Tools via Root Makefile
+      - name: Clone, Build, and Install agbcc
         run: |
-=======
-      - name: Build All Tools via Root Makefile
-        run: |
-          chmod +x tools/poryscript/poryscript 2>/dev/null || true
->>>>>>> 21feb3bbb4f49e24340a5b5e0e3b6a733d7f865a
+          mkdir -p tools/agbcc
+          if [ ! -f "tools/agbcc/build.sh" ]; then
+            rm -rf tools/agbcc
+            git clone https://github.com/pret/agbcc tools/agbcc
+          fi
+          
+          cd tools/agbcc
+          ./build.sh
+          ./install.sh ../../
+          cd ../..
           make tools
 
-      - name: Run Modern Build
+      - name: Run Sequential Modern Build
         run: |
-          make -j$(nproc) modern
+          export CC=arm-none-eabi-gcc
+          make modern
 
       - name: Upload Compiled ROM
         uses: actions/upload-artifact@v4
