@@ -24,7 +24,7 @@ jobs:
       - name: Install Poryscript via GitHub Releases
         run: |
           python3 -c '
-          import urllib.request, json, zipfile, os
+          import urllib.request, json, zipfile, os, shutil
           token = os.environ.get("GITHUB_TOKEN", "")
           headers = {"User-Agent": "Python"}
           if token:
@@ -37,7 +37,20 @@ jobs:
               url = "https://github.com/huderlem/poryscript/releases/download/v3.2.5/poryscript_linux_amd64.zip"
           urllib.request.urlretrieve(url, "poryscript.zip")
           with zipfile.ZipFile("poryscript.zip", "r") as z:
-              z.extractall(".")
+              z.extractall("pory_extracted")
+          
+          found = False
+          for root, dirs, files in os.walk("pory_extracted"):
+              for f in files:
+                  if "poryscript" in f.lower() and not f.endswith(".zip"):
+                      src = os.path.join(root, f)
+                      shutil.move(src, "poryscript")
+                      found = True
+                      break
+              if found:
+                  break
+          if not found:
+              raise FileNotFoundError("Could not locate poryscript binary in extracted archive")
           '
           chmod +x poryscript
           mv poryscript /usr/local/bin/poryscript
