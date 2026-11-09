@@ -19,26 +19,28 @@ jobs:
       - name: Install System Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y curl wget libarchive-tools build-essential gnupg python3
+          sudo apt-get install -y curl wget libarchive-tools build-essential gnupg python3 dirmngr
 
       - name: Install devkitPro Pacman Manually
         run: |
-          # Add devkitPro repository keyring and apt source manually to avoid bootstrap 403 errors
-          sudo wget -O /usr/share/keyrings/devkitpro-pub.gpg https://apt.devkitpro.org/devkitpro-pub.gpg
+          # Download devkitPro pubkey directly from GitHub to bypass Cloudflare 403 blocks on apt.devkitpro.org
+          sudo wget -O /usr/share/keyrings/devkitpro-pub.gpg https://raw.githubusercontent.com/devkitPro/pacman/master/etc/pacman.d/devkitpro.gpg
           echo "deb [signed-by=/usr/share/keyrings/devkitpro-pub.gpg] https://apt.devkitpro.org stable main" | sudo tee /etc/apt/sources.list.d/devkitpro.list
           sudo apt-get update
           
-          # Download the devkitpro-pacman deb package and unpack it with dpkg ignoring postinst failures
+          # Download and unpack devkitpro-pacman package
           apt-get download devkitpro-pacman
           sudo dpkg --unpack devkitpro-pacman_*.deb || true
           
-          # Initialize the pacman keyring manually
+          # Set up gnupg home and import the key manually
           sudo mkdir -p /opt/devkitpro/pacman/etc/pacman.d/gnupg
-          sudo dkp-pacman-key --init || true
-          sudo dkp-pacman-key --populate devkitpro || true
+          sudo chmod 700 /opt/devkitpro/pacman/etc/pacman.d/gnupg
+          sudo gpg --homedir /opt/devkitpro/pacman/etc/pacman.d/gnupg --batch --import /usr/share/keyrings/devkitpro-pub.gpg || true
+          sudo gpg --homedir /opt/devkitpro/pacman/etc/pacman.d/gnupg --batch --update-trustdb || true
 
       - name: Install GBA Development Tools
         run: |
+          sudo dkp-pacman -Sy --noconfirm
           sudo dkp-pacman -Syu --noconfirm gba-dev
 
       - name: Download and Install Poryscript
