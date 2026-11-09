@@ -21,14 +21,24 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y curl wget libarchive-tools build-essential gnupg python3
 
-      - name: Install devkitPro Pacman
+      - name: Install devkitPro Pacman Manually
         run: |
-          curl -sSL -A "Mozilla/5.0 (Windows NT 10.0; Win64; x64)" https://apt.devkitpro.org/install-devkitpro-pacman | sudo bash
+          # Add devkitPro repository keyring and apt source manually to avoid bootstrap 403 errors
+          sudo wget -O /usr/share/keyrings/devkitpro-pub.gpg https://apt.devkitpro.org/devkitpro-pub.gpg
+          echo "deb [signed-by=/usr/share/keyrings/devkitpro-pub.gpg] https://apt.devkitpro.org stable main" | sudo tee /etc/apt/sources.list.d/devkitpro.list
+          sudo apt-get update
+          
+          # Download the devkitpro-pacman deb package and unpack it with dpkg ignoring postinst failures
+          apt-get download devkitpro-pacman
+          sudo dpkg --unpack devkitpro-pacman_*.deb || true
+          
+          # Initialize the pacman keyring manually
+          sudo mkdir -p /opt/devkitpro/pacman/etc/pacman.d/gnupg
+          sudo dkp-pacman-key --init || true
+          sudo dkp-pacman-key --populate devkitpro || true
 
       - name: Install GBA Development Tools
         run: |
-          sudo dkp-pacman -Sy --noconfirm
-          sudo dkp-pacman -S --noconfirm devkitpro-keyring || true
           sudo dkp-pacman -Syu --noconfirm gba-dev
 
       - name: Download and Install Poryscript
