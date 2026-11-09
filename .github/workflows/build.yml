@@ -27,7 +27,6 @@ jobs:
 
       - name: Install GBA Development Tools
         run: |
-          # Explicitly sync databases and update devkitpro-keyring first to prevent PGP/signature errors
           sudo dkp-pacman -Sy --noconfirm
           sudo dkp-pacman -S --noconfirm devkitpro-keyring || true
           sudo dkp-pacman -Syu --noconfirm gba-dev
@@ -35,8 +34,12 @@ jobs:
       - name: Download and Install Poryscript
         run: |
           python3 -c '
-          import urllib.request, json, zipfile
-          req = urllib.request.Request("https://api.github.com/repos/huderlem/poryscript/releases/latest", headers={"User-Agent": "Python"})
+          import urllib.request, json, zipfile, os
+          token = os.environ.get("GITHUB_TOKEN", "")
+          headers = {"User-Agent": "Python"}
+          if token:
+              headers["Authorization"] = f"Bearer {token}"
+          req = urllib.request.Request("https://api.github.com/repos/huderlem/poryscript/releases/latest", headers=headers)
           data = json.loads(urllib.request.urlopen(req).read().decode())
           url = next(a["browser_download_url"] for a in data["assets"] if "linux" in a["name"].lower() and a["name"].endswith(".zip"))
           urllib.request.urlretrieve(url, "poryscript.zip")
@@ -45,6 +48,8 @@ jobs:
           '
           chmod +x poryscript
           sudo mv poryscript /usr/local/bin/poryscript
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Run Modern Build
         run: |
