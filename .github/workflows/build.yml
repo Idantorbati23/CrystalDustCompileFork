@@ -19,7 +19,7 @@ jobs:
       - name: Install System Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y curl wget unzip libarchive-tools build-essential gnupg python3
+          sudo apt-get install -y curl wget libarchive-tools build-essential gnupg python3
 
       - name: Install devkitPro Pacman
         run: |
@@ -27,11 +27,13 @@ jobs:
 
       - name: Install GBA Development Tools
         run: |
+          # Explicitly sync databases and update devkitpro-keyring first to prevent PGP/signature errors
+          sudo dkp-pacman -Sy --noconfirm
+          sudo dkp-pacman -S --noconfirm devkitpro-keyring || true
           sudo dkp-pacman -Syu --noconfirm gba-dev
 
       - name: Download and Install Poryscript
         run: |
-          # Dynamically fetch and extract the linux zip asset from GitHub releases
           python3 -c '
           import urllib.request, json, zipfile
           req = urllib.request.Request("https://api.github.com/repos/huderlem/poryscript/releases/latest", headers={"User-Agent": "Python"})
