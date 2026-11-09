@@ -16,27 +16,10 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Install System Dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y curl wget libarchive-tools build-essential gnupg python3 unzip make bzip2
-
-      - name: Setup devkitARM Toolchain Manually
-        run: |
-          sudo mkdir -p /opt/devkitpro/devkitARM
-          
-          # Download and extract devkitARM release directly via Python to ensure reliability
-          python3 -c '
-          import urllib.request, json, tarfile, os, subprocess
-          
-          url = "https://github.com/devkitPro/devkitarm-r1/releases/download/release_54/devkitARM-r54-linux.tar.bz2"
-          print("Downloading devkitARM from:", url)
-          urllib.request.urlretrieve(url, "devkitARM.tar.bz2")
-          
-          print("Extracting devkitARM...")
-          os.makedirs("/opt/devkitpro/devkitARM", exist_ok=True)
-          subprocess.run(["sudo", "tar", "-xjf", "devkitARM.tar.bz2", "-C", "/opt/devkitpro"], check=True)
-          '
+      - name: Setup devkitPro Environment
+        uses: devkitPro/actions/setup@v3
+        with:
+          pacman-packages: gba-dev
 
       - name: Install Poryscript via GitHub Releases
         run: |
