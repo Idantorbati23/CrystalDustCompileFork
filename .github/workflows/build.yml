@@ -13,18 +13,19 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
       - name: Install System Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y curl wget libarchive-tools build-essential
+          sudo apt-get install -y curl wget libarchive-tools build-essential gnupg git gcc g++
 
-      - name: Install devkitPro Pacman via Bootstrap Script
+      - name: Install devkitPro Pacman
         run: |
-          sudo dirmngr </dev/null
-          wget https://apt.devkitpro.org/install-devkitpro-pacman
-          chmod +x install-devkitpro-pacman
-          sudo ./install-devkitpro-pacman
+          PACMAN_URL=$(curl -s https://api.github.com/repos/devkitPro/pacman/releases/latest | grep "browser_download_url.*amd64\.deb" | cut -d '"' -f 4)
+          curl -L -A "Mozilla/5.0" -o devkitpro-pacman.amd64.deb "$PACMAN_URL"
+          sudo dpkg -i devkitpro-pacman.amd64.deb
 
       - name: Install GBA Development Tools
         run: |
@@ -38,12 +39,21 @@ jobs:
           chmod +x poryscript
           sudo mv poryscript /usr/local/bin/poryscript
 
-      - name: Run Build
+      - name: Setup agbcc and Build Tools
         run: |
-          make -j$(nproc)
+          # Create symbolic alias in case the Makefile explicitly calls make-modern or modern make binaries
+          sudo ln -sf /usr/bin/make /usr/local/bin/make-modern
         env:
           DEVKITPRO: /opt/devkitpro
           DEVKITARM: /opt/devkitpro/devkitARM
+
+      - name: Run Build
+        run: |
+          make -j$(nproc) modern
+        env:
+          DEVKITPRO: /opt/devkitpro
+          DEVKITARM: /opt/devkitpro/devkitARM
+          PATH: /opt/devkitpro/devkitARM/bin:/usr/local/bin:$PATH
 
       - name: Upload Compiled ROM
         uses: actions/upload-artifact@v4
