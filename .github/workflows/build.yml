@@ -9,6 +9,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    container: devkitpro/devkitarm
 
     steps:
       - name: Checkout Repository
@@ -18,27 +19,7 @@ jobs:
 
       - name: Install System Dependencies
         run: |
-          sudo apt-get update
-          sudo apt-get install -y curl wget libarchive-tools build-essential gnupg python3 unzip make
-
-      - name: Setup devkitARM Toolchain Manually
-        run: |
-          # Create devkitPro directory structure
-          sudo mkdir -p /opt/devkitpro/devkitARM
-          sudo mkdir -p /opt/devkitpro/tools
-
-          # Download and extract devkitARM release directly from GitHub (bypassing pacman & Cloudflare 403s)
-          echo "Downloading devkitARM release..."
-          DEVKITARM_URL=$(curl -sSL -A "Mozilla/5.0" https://api.github.com/repos/devkitPro/devkitarm-r1/releases/latest | grep -o '"browser_download_url": "[^"]*linux\.tar\.xz"' | head -n 1 | cut -d'"' -f4)
-          if [ -z "$DEVKITARM_URL" ]; then
-            DEVKITARM_URL="https://github.com/devkitPro/devkitarm-r1/releases/download/release_54/devkitARM-r54-linux.tar.bz2"
-          fi
-          
-          curl -sSL -A "Mozilla/5.0" -o devkitarm.archive "$DEVKITARM_URL"
-          sudo tar -xf devkitarm.archive -C /opt/devkitpro/ || sudo bsdtar -xf devkitarm.archive -C /opt/devkitpro/
-
-          # Ensure correct permissions
-          sudo chmod -R +x /opt/devkitpro/devkitARM/bin
+          apt-get update && apt-get install -y curl python3 make git build-essential unzip
 
       - name: Install Poryscript via GitHub Releases
         run: |
@@ -59,13 +40,13 @@ jobs:
               z.extractall(".")
           '
           chmod +x poryscript
-          sudo mv poryscript /usr/local/bin/poryscript
+          mv poryscript /usr/local/bin/poryscript
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Run Modern Build
         run: |
-          sudo ln -sf /usr/bin/make /usr/local/bin/make-modern
+          ln -sf /usr/bin/make /usr/local/bin/make-modern
           make -j$(nproc) modern
         env:
           DEVKITPRO: /opt/devkitpro
