@@ -23,7 +23,6 @@ jobs:
 
       - name: Install devkitPro Pacman
         run: |
-          # Use curl with a browser User-Agent to successfully fetch and execute the bootstrap script
           curl -sSL -A "Mozilla/5.0 (Windows NT 10.0; Win64; x64)" https://apt.devkitpro.org/install-devkitpro-pacman | sudo bash
 
       - name: Install GBA Development Tools
@@ -32,8 +31,8 @@ jobs:
 
       - name: Download and Install Poryscript
         run: |
-          PORY_VERSION="v3.2.5"
-          curl -L -o poryscript.tar.gz "https://github.com/huderlem/poryscript/releases/download/${PORY_VERSION}/poryscript_${PORY_VERSION#v}_linux_amd64.tar.gz"
+          # Use the stable latest-release redirect URL to avoid 404/version naming mismatches
+          curl -L -o poryscript.tar.gz "https://github.com/huderlem/poryscript/releases/latest/download/poryscript_linux_amd64.tar.gz"
           tar -xzf poryscript.tar.gz
           chmod +x poryscript
           sudo mv poryscript /usr/local/bin/poryscript
