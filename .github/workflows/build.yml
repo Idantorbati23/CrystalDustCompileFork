@@ -23,15 +23,35 @@ jobs:
 
       - name: Install devkitPro Pacman Manually
         run: |
-          # Use curl with a browser User-Agent to successfully download the GPG key from apt.devkitpro.org
           sudo curl -sSL -A "Mozilla/5.0 (Windows NT 10.0; Win64; x64)" -o /usr/share/keyrings/devkitpro-pub.gpg https://apt.devkitpro.org/devkitpro-pub.gpg
           echo "deb [signed-by=/usr/share/keyrings/devkitpro-pub.gpg] https://apt.devkitpro.org stable main" | sudo tee /etc/apt/sources.list.d/devkitpro.list
           sudo apt-get update
           
-          # Download and unpack devkitpro-pacman package
+          # Download and unpack devkitpro-pacman
           apt-get download devkitpro-pacman
           sudo dpkg --unpack devkitpro-pacman_*.deb || true
           
+          # Create missing pacman.conf and directory structure required by dkp-pacman
+          sudo mkdir -p /opt/devkitpro/pacman/etc/pacman.d
+          sudo mkdir -p /opt/devkitpro/pacman/var/lib/pacman
+          sudo mkdir -p /opt/devkitpro/pacman/var/log
+          
+          # Write out a valid pacman.conf for devkitPro repositories
+          sudo tee /opt/devkitpro/pacman/etc/pacman.conf > /dev/null << 'EOF'
+          [options]
+          HoldPkg     = pacman glibc
+          Architecture = auto
+          CheckSpace
+          SigLevel    = Required DatabaseOptional
+          LocalFileSigLevel = Optional
+
+          [dkp-libs]
+          Server = https://pkg.devkitpro.org
+
+          [dkp-linux]
+          Server = https://pkg.devkitpro.org
+          EOF
+
           # Set up gnupg home and import the key manually
           sudo mkdir -p /opt/devkitpro/pacman/etc/pacman.d/gnupg
           sudo chmod 700 /opt/devkitpro/pacman/etc/pacman.d/gnupg
@@ -40,8 +60,8 @@ jobs:
 
       - name: Install GBA Development Tools
         run: |
-          sudo dkp-pacman -Sy --noconfirm
-          sudo dkp-pacman -Syu --noconfirm gba-dev
+          sudo dkp-pacman --config /opt/devkitpro/pacman/etc/pacman.conf -Sy --noconfirm
+          sudo dkp-pacman --config /opt/devkitpro/pacman/etc/pacman.conf -Syu --noconfirm gba-dev
 
       - name: Download and Install Poryscript
         run: |
