@@ -36,9 +36,9 @@ jobs:
         run: |
           make tools
 
-      - name: Clean and Run Modern Build
+      - name: Run Modern Build
         run: |
-          make modern
+          make -j$(nproc) modern
 
       - name: Upload Compiled ROM
         uses: actions/upload-artifact@v4
