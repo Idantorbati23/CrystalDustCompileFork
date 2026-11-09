@@ -33,26 +33,31 @@ jobs:
         run: |
           chmod +x tools/poryscript/poryscript 2>/dev/null || true
 
-      - name: Inspect Tools Directory and Build
+      - name: Clone and Build agbcc
         run: |
-          echo "=== Contents of tools/ ==="
-          ls -la tools/ || true
-          
-          if [ -d "tools/agbcc" ]; then
-            cd tools/agbcc
-            if [ -f "build.sh" ]; then ./build.sh; fi
-            mkdir -p bin
-            if [ -f "agbcc" ]; then cp agbcc bin/; fi
-            cd ../..
-          else
-            echo "tools/agbcc not found; skipping agbcc specific build step."
+          mkdir -p tools/agbcc
+          if [ ! -f "tools/agbcc/build.sh" ]; then
+            echo "Cloning pret/agbcc..."
+            rm -rf tools/agbcc
+            git clone https://github.com/pret/agbcc tools/agbcc
           fi
           
-          make tools || true
+          echo "Building agbcc..."
+          cd tools/agbcc
+          ./build.sh
+          mkdir -p bin
+          if [ -f "agbcc" ]; then
+            cp agbcc bin/
+          fi
+          if [ -f "agbcc_arm" ]; then
+            cp agbcc_arm bin/
+          fi
+          cd ../..
+          make tools
 
-      - name: Link Newlib Headers
+      - name: Link Newlib Headers for agbcc
         run: |
-          mkdir -p tools/agbcc/include 2>/dev/null || true
+          mkdir -p tools/agbcc/include
           ln -sf /usr/arm-none-eabi/include/* tools/agbcc/include/ 2>/dev/null || true
           ln -sf /usr/lib/gcc/arm-none-eabi/*/include/* tools/agbcc/include/ 2>/dev/null || true
 
