@@ -31,12 +31,12 @@ jobs:
 
       - name: Download and Install Poryscript
         run: |
-          # Automatically query GitHub API to grab the correct Linux asset URL
+          # Dynamically find and download any Linux release asset for poryscript
           python3 -c '
           import urllib.request, json
           req = urllib.request.Request("https://api.github.com/repos/huderlem/poryscript/releases/latest", headers={"User-Agent": "Python"})
           data = json.loads(urllib.request.urlopen(req).read().decode())
-          url = next(a["browser_download_url"] for a in data["assets"] if "linux" in a["name"] and "amd64" in a["name"])
+          url = next(a["browser_download_url"] for a in data["assets"] if "linux" in a["name"].lower() and a["name"].endswith(".tar.gz"))
           urllib.request.urlretrieve(url, "poryscript.tar.gz")
           '
           tar -xzf poryscript.tar.gz
