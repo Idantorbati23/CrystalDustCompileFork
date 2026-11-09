@@ -9,19 +9,17 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    container: ghcr.io/devkitpro/base:latest
 
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Install System Dependencies
-        run: |
-          apt-get update && apt-get install -y wget curl unzip libarchive-tools
+      - name: Setup devkitPro Environment
+        uses: devkitPro/actions/install-devkitpro@v4
 
-      - name: Install devkitPro Pacman Packages
+      - name: Install GBA Development Tools
         run: |
-          dmpkg install gba-dev
+          dkp-pacman -Syu --noconfirm gba-dev
 
       - name: Download and Install Poryscript
         run: |
@@ -29,10 +27,7 @@ jobs:
           curl -L -o poryscript.tar.gz "https://github.com/huderlem/poryscript/releases/download/${PORY_VERSION}/poryscript_${PORY_VERSION#v}_linux_amd64.tar.gz"
           tar -xzf poryscript.tar.gz
           chmod +x poryscript
-          mv poryscript /usr/local/bin/poryscript
-        env:
-          DEVKITPRO: /opt/devkitpro
-          DEVKITARM: /opt/devkitpro/devkitARM
+          sudo mv poryscript /usr/local/bin/poryscript
 
       - name: Run Build
         run: |
