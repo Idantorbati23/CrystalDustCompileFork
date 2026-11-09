@@ -33,14 +33,19 @@ jobs:
         run: |
           chmod +x tools/poryscript/poryscript 2>/dev/null || true
 
-      - name: Build All Tools Including agbcc
+      - name: Compile agbcc and Repository Tools
         run: |
-          # Explicitly build agbcc and other tools
-          make -C tools/agbcc || true
+          # Build agbcc explicitly if a build script or makefile exists inside it
+          if [ -f "tools/agbcc/build.sh" ]; then
+            cd tools/agbcc && ./build.sh && cd ../..
+          elif [ -f "tools/agbcc/Makefile" ]; then
+            make -C tools/agbcc
+          fi
           make tools
 
-      - name: Run Modern Build with Explicit Include Paths
+      - name: Run Modern Build with Correct Include Paths & Sysroot
         run: |
+          export CC=arm-none-eabi-gcc
           export CFLAGS="-isystem /usr/arm-none-eabi/include -isystem /usr/lib/gcc/arm-none-eabi/14.2.1/include"
           export CPPFLAGS="-isystem /usr/arm-none-eabi/include -isystem /usr/lib/gcc/arm-none-eabi/14.2.1/include"
           make -j$(nproc) modern
