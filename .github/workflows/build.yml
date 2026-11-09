@@ -34,6 +34,11 @@ jobs:
           mkdir -p tools/poryscript
           wget -q https://github.com/huderlem/poryscript/releases/latest/download/poryscript-linux.zip -O poryscript-linux.zip
           unzip -o poryscript-linux.zip -d tools/poryscript/
+          # Move files out of the nested folder if they extracted into poryscript-linux/
+          if [ -d "tools/poryscript/poryscript-linux" ]; then
+            cp -r tools/poryscript/poryscript-linux/* tools/poryscript/
+            rm -rf tools/poryscript/poryscript-linux
+          fi
           chmod +x tools/poryscript/poryscript
           rm poryscript-linux.zip
 
