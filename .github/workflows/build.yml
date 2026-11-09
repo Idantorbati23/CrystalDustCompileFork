@@ -35,7 +35,6 @@ jobs:
 
       - name: Compile agbcc and Repository Tools
         run: |
-          # Build agbcc explicitly if a build script or makefile exists inside it
           if [ -f "tools/agbcc/build.sh" ]; then
             cd tools/agbcc && ./build.sh && cd ../..
           elif [ -f "tools/agbcc/Makefile" ]; then
@@ -43,11 +42,16 @@ jobs:
           fi
           make tools
 
-      - name: Run Modern Build with Correct Include Paths & Sysroot
+      - name: Link Newlib Headers for agbcc
+        run: |
+          mkdir -p tools/agbcc/include
+          # Link standard newlib headers so agbcc can locate stddef.h, stdint.h, etc.
+          ln -sf /usr/arm-none-eabi/include/* tools/agbcc/include/ 2>/dev/null || true
+          ln -sf /usr/lib/gcc/arm-none-eabi/*/include/* tools/agbcc/include/ 2>/dev/null || true
+
+      - name: Run Modern Build
         run: |
           export CC=arm-none-eabi-gcc
-          export CFLAGS="-isystem /usr/arm-none-eabi/include -isystem /usr/lib/gcc/arm-none-eabi/14.2.1/include"
-          export CPPFLAGS="-isystem /usr/arm-none-eabi/include -isystem /usr/lib/gcc/arm-none-eabi/14.2.1/include"
           make -j$(nproc) modern
 
       - name: Upload Compiled ROM
