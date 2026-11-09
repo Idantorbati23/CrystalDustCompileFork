@@ -33,7 +33,7 @@ jobs:
         run: |
           chmod +x tools/poryscript/poryscript 2>/dev/null || true
 
-      - name: Setup and Build agbcc
+      - name: Clone, Build, and Install agbcc
         run: |
           mkdir -p tools/agbcc
           if [ ! -f "tools/agbcc/build.sh" ]; then
@@ -43,20 +43,10 @@ jobs:
           
           cd tools/agbcc
           ./build.sh
-          mkdir -p bin
-          if [ -f "agbcc" ]; then cp agbcc bin/; fi
-          if [ -f "agbcc_arm" ]; then cp agbcc_arm bin/; fi
+          # Use agbcc's official installer to configure binaries and include paths
+          ./install.sh ../../
           cd ../..
           make tools
-
-      - name: Populate agbcc Include Headers Correctly
-        run: |
-          mkdir -p tools/agbcc/include
-          # Copy standard newlib headers directly into agbcc include directory so agbcc finds them
-          cp -r /usr/arm-none-eabi/include/* tools/agbcc/include/ 2>/dev/null || true
-          
-        # Ensure agbcc itself is executable
-          chmod +x tools/agbcc/bin/agbcc 2>/dev/null || true
 
       - name: Run Sequential Modern Build
         run: |
