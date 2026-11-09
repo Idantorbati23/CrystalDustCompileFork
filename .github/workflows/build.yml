@@ -1,76 +1,57 @@
-name: CI
+name: Build GBA ROM
 
 on:
   push:
-    branches: [ master ]
+    branches: [ "main" ]
   pull_request:
+    branches: [ "main" ]
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    env:
-      GAME_VERSION: EMERALD
-      GAME_REVISION: 0
-      GAME_LANGUAGE: ENGLISH
-      MODERN: 0
-      COMPARE: 1
+    container: devkitpro/base:latest
+
     steps:
-      - name: Checkout
-        uses: actions/checkout@master
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
-      - name: Checkout syms
-        if: ${{ github.event_name == 'push' }}
-        uses: actions/checkout@master
-        with:
-          path: symbols
-          ref: symbols
-
-      - name: Checkout agbcc
-        uses: actions/checkout@master
-        with:
-          path: agbcc
-          repository: pret/agbcc
-
-      - name: Install binutils
-        run: sudo apt install gcc-arm-none-eabi binutils-arm-none-eabi
-        # build-essential, git, and libpng-dev are already installed
-        # gcc-arm-none-eabi is only needed for the modern build
-        # as an alternative to dkP
-
-      - name: Install agbcc
+      - name: Install System Dependencies
         run: |
-          ./build.sh
-          ./install.sh ../
-        working-directory: agbcc
+          apt-get update && apt-get install -y wget curl unzip libarchive-tools
 
-      - name: Compare
-        run: make -j${nproc} all syms
-
-      - name: Modern
-        env:
-          MODERN: 1
-          COMPARE: 0
-        run: make -j${nproc} all
-
-      - name: Webhook
-        if: ${{ github.event_name == 'push' && github.repository_owner == 'pret' }}
-        env:
-          CALCROM_DISCORD_WEBHOOK_USERNAME: OK
-          CALCROM_DISCORD_WEBHOOK_AVATAR_URL: https://i.imgur.com/38BQHdd.png
-          CALCROM_DISCORD_WEBHOOK_URL: ${{ secrets.CALCROM_DISCORD_WEBHOOK_URL }}
-        run: sh .github/calcrom/webhook.sh pokeemerald
-
-      - name: Move symfiles
-        if: ${{ github.event_name == 'push' }}
+      - name: Install devkitPro Pacman Packages
         run: |
-          cp -v *.sym symbols/
-          echo "SYMBOLS_COMMIT_MSG=$( git log --format=%s ${GITHUB_SHA} )" >> $GITHUB_ENV
+          dmpkg install gba-dev
 
-      - name: Update symfiles
-        if: ${{ github.event_name == 'push' }}
-        uses: EndBug/add-and-commit@v7
+      - name: Download and Install Poryscript
+        run: |
+          # Fetch the latest Linux release of poryscript (adjust tag/version if needed)
+          PORY_VERSION="v3.2.5" # Update if your project requires a specific version
+          curl -L -o poryscript.tar.gz "https://github.com/huderlem/poryscript/releases/download/${PORY_VERSION}/poryscript_${PORY_VERSION#v}_linux_amd64.tar.gz"
+          
+          # Extract and place it where your makefile/build system expects it
+          tar -xzf poryscript.tar.gz
+          chmod +x poryscript
+          
+          # If your Makefile expects poryscript in the root folder or a specific bin path:
+          # (Move it to /usr/local/bin or keep it in the workspace root)
+          mv poryscript /usr/local/bin/poryscript
+          
+        env:
+          DEVKITPRO: /opt/devkitpro
+          DEVKITARM: /opt/devkitpro/devkitARM
+
+      - name: Run Build
+        run: |
+          make -j$(nproc)
+        env:
+          DEVKITPRO: /opt/devkitpro
+          DEVKITARM: /opt/devkitpro/devkitARM
+
+      - name: Upload Compiled ROM
+        uses: actions/upload-artifact@v4
         with:
-          branch: symbols
-          cwd: "./symbols"
-          add: "*.sym"
-          message: ${{ env.SYMBOLS_COMMIT_MSG }}
+          name: gba-rom
+          path: |
+            *.gba
+            build/*.gba
