@@ -19,7 +19,7 @@ jobs:
       - name: Install System Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y curl wget libarchive-tools build-essential gnupg
+          sudo apt-get install -y curl wget libarchive-tools build-essential gnupg python3
 
       - name: Install devkitPro Pacman
         run: |
@@ -31,8 +31,14 @@ jobs:
 
       - name: Download and Install Poryscript
         run: |
-          # Use the stable latest-release redirect URL to avoid 404/version naming mismatches
-          curl -L -o poryscript.tar.gz "https://github.com/huderlem/poryscript/releases/latest/download/poryscript_linux_amd64.tar.gz"
+          # Automatically query GitHub API to grab the correct Linux asset URL
+          python3 -c '
+          import urllib.request, json
+          req = urllib.request.Request("https://api.github.com/repos/huderlem/poryscript/releases/latest", headers={"User-Agent": "Python"})
+          data = json.loads(urllib.request.urlopen(req).read().decode())
+          url = next(a["browser_download_url"] for a in data["assets"] if "linux" in a["name"] and "amd64" in a["name"])
+          urllib.request.urlretrieve(url, "poryscript.tar.gz")
+          '
           tar -xzf poryscript.tar.gz
           chmod +x poryscript
           sudo mv poryscript /usr/local/bin/poryscript
