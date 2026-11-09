@@ -16,13 +16,18 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Install System Dependencies & devkitPro Pacman
+      - name: Install System Dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y curl wget libarchive-tools build-essential gnupg python3 unzip make libpng-dev libz-dev
-          sudo curl -sSL https://apt.devkitpro.org/install-devkitpro-pacman | sudo bash
-          sudo dkp-pacman -Sy --noconfirm
-          sudo dkp-pacman -Syu --noconfirm gba-dev
+
+      - name: Install devkitARM Manually
+        run: |
+          sudo mkdir -p /opt/devkitpro/devkitARM
+          wget -q https://github.com/devkitPro/devkitarm-r1/releases/download/release_53/devkitARM-r53-linux.tar.bz2 -O devkitARM.tar.bz2 || \
+          wget -q https://github.com/devkitPro/devkitarm-r1/releases/latest/download/devkitARM-linux.tar.bz2 -O devkitARM.tar.bz2 || \
+          curl -L -s https://github.com/devkitPro/devkitarm-r1/releases/download/release_53/devkitARM-r53-linux.tar.bz2 -o devkitARM.tar.bz2
+          sudo tar -C /opt/devkitpro/devkitARM --strip-components=1 -xjf devkitARM.tar.bz2 || sudo tar -C /opt/devkitpro/devkitARM -xjf devkitARM.tar.bz2
 
       - name: Build Repository Tools & Set Permissions
         run: |
