@@ -33,13 +33,16 @@ jobs:
         run: |
           chmod +x tools/poryscript/poryscript 2>/dev/null || true
 
-      - name: Compile agbcc and Repository Tools
+      - name: Explicitly Build and Install agbcc
         run: |
-          if [ -f "tools/agbcc/build.sh" ]; then
-            cd tools/agbcc && ./build.sh && cd ../..
-          elif [ -f "tools/agbcc/Makefile" ]; then
-            make -C tools/agbcc
+          cd tools/agbcc
+          ./build.sh
+          # Ensure the bin directory exists and agbcc is copied into it
+          mkdir -p bin
+          if [ -f "agbcc" ]; then
+            cp agbcc bin/
           fi
+          cd ../..
           make tools
 
       - name: Link Newlib Headers for agbcc
