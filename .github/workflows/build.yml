@@ -23,8 +23,8 @@ jobs:
 
       - name: Install devkitPro Pacman Manually
         run: |
-          # Download devkitPro pubkey directly from GitHub to bypass Cloudflare 403 blocks on apt.devkitpro.org
-          sudo wget -O /usr/share/keyrings/devkitpro-pub.gpg https://raw.githubusercontent.com/devkitPro/pacman/master/etc/pacman.d/devkitpro.gpg
+          # Use curl with a browser User-Agent to successfully download the GPG key from apt.devkitpro.org
+          sudo curl -sSL -A "Mozilla/5.0 (Windows NT 10.0; Win64; x64)" -o /usr/share/keyrings/devkitpro-pub.gpg https://apt.devkitpro.org/devkitpro-pub.gpg
           echo "deb [signed-by=/usr/share/keyrings/devkitpro-pub.gpg] https://apt.devkitpro.org stable main" | sudo tee /etc/apt/sources.list.d/devkitpro.list
           sudo apt-get update
           
