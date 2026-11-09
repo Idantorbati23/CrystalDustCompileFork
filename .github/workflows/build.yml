@@ -50,6 +50,9 @@ jobs:
           Server = https://pkg.devkitpro.org
           EOF
 
+          # 3. Manually create the dkp-pacman symlink pointing to the unpacked binary
+          sudo ln -sf /opt/devkitpro/pacman/bin/pacman /usr/bin/dkp-pacman
+
       - name: Install GBA Development Tools via dkp-pacman
         run: |
           sudo dkp-pacman --config /opt/devkitpro/pacman/etc/pacman.conf -Sy --noconfirm
