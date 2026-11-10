@@ -288,7 +288,7 @@ include songs.mk
 %.pory: ;
 
 %.1bpp: %.png  ; $(GFX) $< $@
-%.4bpp: %.png  ; $(GFX) $< $@ -transid 0
+%.4bpp: %.png  ; $(GFX) $< $@
 %.8bpp: %.png  ; $(GFX) $< $@
 %.gbapal: %.pal ; $(GFX) $< $@
 %.gbapal: %.png ; $(GFX) $< $@
@@ -406,7 +406,7 @@ define SRC_ASM_DATA_DEP
 $1: $2 $$(shell $(SCANINC) -I include -I "" $2)
 	$$(PREPROC) $$< charmap.txt | $$(CPP) -I include - | $$(AS) $$(ASFLAGS) -o $$@
 endef
-$(foreach src, $(C_ASM_SRCS), $(eval $(call SRC_ASM_DATA_DEP,$(patsubst $(C_SUBDIR)/%.s,$(C_BUILDDIR)/%.o, $(src)),$(src))))
+$(foreach src, $(C_ASM_SRCS),$(eval $(call SRC_ASM_DATA_DEP,$(patsubst $(C_SUBDIR)/%.s,$(C_BUILDDIR)/%.o, $(src)),$(src))))
 endif
 
 ifeq ($(NODEP),1)
@@ -417,14 +417,14 @@ define ASM_DEP
 $1: $2 $$(shell $(SCANINC) -I include -I "" $2)
 	$$(AS) $$(ASFLAGS) -o $$@ $$<
 endef
-$(foreach src, $(ASM_SRCS), $(eval $(call ASM_DEP,$(patsubst $(ASM_SUBDIR)/%.s,$(ASM_BUILDDIR)/%.o, $(src)),$(src))))
+$(foreach src, $(ASM_SRCS),$(eval $(call ASM_DEP,$(patsubst $(ASM_SUBDIR)/%.s,$(ASM_BUILDDIR)/%.o, $(src)),$(src))))
 endif
 
 ifeq ($(NODEP),1)
 $(DATA_ASM_BUILDDIR)/%.o: $(DATA_ASM_SUBDIR)/%.s
 	$(PREPROC) $< charmap.txt | $(CPP) -I include - | $(AS) $(ASFLAGS) -o $@
 else
-$(foreach src, $(REGULAR_DATA_ASM_SRCS), $(eval $(call SRC_ASM_DATA_DEP,$(patsubst $(DATA_ASM_SUBDIR)/%.s,$(DATA_ASM_BUILDDIR)/%.o, $(src)),$(src))))
+$(foreach src, $(REGULAR_DATA_ASM_SRCS),$(eval $(call SRC_ASM_DATA_DEP,$(patsubst $(DATA_ASM_SUBDIR)/%.s,$(DATA_ASM_BUILDDIR)/%.o, $(src)),$(src))))
 endif
 endif
 
